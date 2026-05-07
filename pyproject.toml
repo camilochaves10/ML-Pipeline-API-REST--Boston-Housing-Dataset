@@ -18,9 +18,13 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
+    "jupyter>=1.1.1",
     "jupyterlab>=4.5.7",
+    "matplotlib>=3.10.9",
     "nbstripout>=0.9.1",
     "notebook>=7.5.6",
+    "plotly>=6.7.0",
     "pytest>=9.0.3",
     "ruff>=0.15.12",
+    "seaborn>=0.13.2",
 ]
