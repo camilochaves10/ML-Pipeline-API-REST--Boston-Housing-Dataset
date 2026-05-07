@@ -1,9 +1,10 @@
+from pathlib import Path
+
 import joblib
 import pandas as pd
 
-from pathlib import Path
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 from src.pipeline import build_pipeline
 
@@ -20,8 +21,6 @@ def train():
     X = df.drop(columns=[target])
     y = df[target]
 
-    numeric_features = X.columns.tolist()
-
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -29,8 +28,7 @@ def train():
         random_state=42,
     )
 
-    pipeline = build_pipeline(numeric_features)
-
+    pipeline = build_pipeline()
     pipeline.fit(X_train, y_train)
 
     preds = pipeline.predict(X_test)
@@ -39,9 +37,9 @@ def train():
     rmse = mean_squared_error(y_test, preds) ** 0.5
     r2 = r2_score(y_test, preds)
 
-    print(f"MAE: {mae:.4f}")
+    print(f"MAE:  {mae:.4f}")
     print(f"RMSE: {rmse:.4f}")
-    print(f"R2: {r2:.4f}")
+    print(f"R2:   {r2:.4f}")
 
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, MODEL_PATH)
