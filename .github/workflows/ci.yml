@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Docker Compose services
+        run: docker compose build
+
+      - name: Run tests
+        run: docker compose run --rm api pytest
+
+      - name: Validate Docker Compose app starts
+        run: docker compose up -d
+
+      - name: Show running containers
+        run: docker compose ps
+
+      - name: Shut down containers
+        if: always()
+        run: docker compose down
