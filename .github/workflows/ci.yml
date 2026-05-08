@@ -11,6 +11,9 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -18,15 +21,19 @@ jobs:
       - name: Build Docker Compose services
         run: docker compose build
 
+      - name: Run pipeline
+        run: docker compose run --rm pipeline
+
       - name: Run tests
         run: docker compose run --rm api pytest
 
-      - name: Validate Docker Compose app starts
-        run: docker compose up -d
+      - name: Start API and Streamlit
+        run: docker compose up -d api streamlit
 
-      - name: Show running containers
-        run: docker compose ps
+      - name: Show logs if failed
+        if: failure()
+        run: docker compose logs
 
-      - name: Shut down containers
+      - name: Shut down
         if: always()
         run: docker compose down
