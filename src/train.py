@@ -9,9 +9,25 @@ from sklearn.model_selection import train_test_split
 from src.pipeline import build_pipeline
 
 
-DATA_PATH = Path("data/raw/HousingData.csv")
+FULL_DATA_PATH = Path("data/raw/HousingData.csv")
+SAMPLE_DATA_PATH = Path("data/raw/sample.csv")
+
 MODEL_PATH = Path("models/housing_model.joblib")
 METRICS_PATH = Path("models/metrics.json")
+
+
+def load_training_data() -> pd.DataFrame:
+    if FULL_DATA_PATH.exists():
+        print(f"Loading full dataset from {FULL_DATA_PATH}")
+        return pd.read_csv(FULL_DATA_PATH)
+
+    if SAMPLE_DATA_PATH.exists():
+        print(f"Full dataset not found. Loading sample dataset from {SAMPLE_DATA_PATH}")
+        return pd.read_csv(SAMPLE_DATA_PATH)
+
+    raise FileNotFoundError(
+        f"No dataset found. Expected either {FULL_DATA_PATH} or {SAMPLE_DATA_PATH}."
+    )
 
 
 def validate_training_data(df: pd.DataFrame) -> None:
@@ -42,7 +58,7 @@ def validate_training_data(df: pd.DataFrame) -> None:
 
 
 def train() -> None:
-    df = pd.read_csv(DATA_PATH)
+    df = load_training_data()
 
     validate_training_data(df)
 
@@ -51,12 +67,17 @@ def train() -> None:
     X = df.drop(columns=[target])
     y = df[target]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-    )
+    if len(df) < 10:
+        print("Small sample dataset detected. Training and evaluating on the same data.")
+        X_train, X_test = X, X
+        y_train, y_test = y, y
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+        )
 
     pipeline = build_pipeline()
     pipeline.fit(X_train, y_train)
@@ -77,6 +98,8 @@ def train() -> None:
     metrics = pd.DataFrame(
         [
             {
+                "dataset_used": str(FULL_DATA_PATH if FULL_DATA_PATH.exists() else SAMPLE_DATA_PATH),
+                "rows": len(df),
                 "mae": mae,
                 "rmse": rmse,
                 "r2": r2,
