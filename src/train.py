@@ -11,10 +11,40 @@ from src.pipeline import build_pipeline
 
 DATA_PATH = Path("data/raw/HousingData.csv")
 MODEL_PATH = Path("models/housing_model.joblib")
+METRICS_PATH = Path("models/metrics.json")
 
 
-def train():
+def validate_training_data(df: pd.DataFrame) -> None:
+    required_columns = {
+        "CRIM",
+        "ZN",
+        "INDUS",
+        "CHAS",
+        "NOX",
+        "RM",
+        "AGE",
+        "DIS",
+        "RAD",
+        "TAX",
+        "PTRATIO",
+        "B",
+        "LSTAT",
+        "MEDV",
+    }
+
+    missing_columns = required_columns - set(df.columns)
+
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {missing_columns}")
+
+    if df["MEDV"].isnull().any():
+        raise ValueError("Target column MEDV contains null values.")
+
+
+def train() -> None:
     df = pd.read_csv(DATA_PATH)
+
+    validate_training_data(df)
 
     target = "MEDV"
 
@@ -44,7 +74,20 @@ def train():
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, MODEL_PATH)
 
+    metrics = pd.DataFrame(
+        [
+            {
+                "mae": mae,
+                "rmse": rmse,
+                "r2": r2,
+            }
+        ]
+    )
+
+    metrics.to_json(METRICS_PATH, orient="records", indent=4)
+
     print(f"Model saved to {MODEL_PATH}")
+    print(f"Metrics saved to {METRICS_PATH}")
 
 
 if __name__ == "__main__":

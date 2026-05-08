@@ -1,16 +1,23 @@
 # Housing Price Prediction MLOps MVP
 
-This project trains and serves a machine learning model for the Boston Housing dataset.
+This project implements an end-to-end machine learning pipeline using the Boston Housing open-source dataset.
 
 It includes:
 
-- EDA notebooks
-- sklearn preprocessing pipeline
-- RandomForest regression model
-- FastAPI backend
+- Dataset cleaning and preprocessing
+- Reproducible sklearn pipeline
+- Regression model training
+- Model evaluation
+- Model persistence
+- REST API with FastAPI
 - Streamlit frontend
-- pytest tests
+- Basic production monitoring
+- Retraining support
 - Docker support
+- GitHub Actions CI
+- Optional Airflow orchestration
+
+---
 
 ## Project Structure
 
@@ -19,17 +26,17 @@ housing-mlops/
 ├── app/
 │   ├── api.py
 │   └── streamlit_app.py
-├── data/
-│   └── raw/
-│       └── HousingData.csv
-├── models/
 ├── src/
 │   ├── pipeline.py
 │   ├── train.py
-│   └── predict.py
+│   ├── predict.py
+│   └── monitoring.py
 ├── tests/
-│   └── test_pipeline.py
+├── scripts/
+├── models/
+├── logs/
+├── data/
+├── notebooks/
 ├── Dockerfile
 ├── Makefile
-├── pyproject.toml
 └── README.md

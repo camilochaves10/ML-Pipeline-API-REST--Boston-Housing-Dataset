@@ -1,8 +1,51 @@
 services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: housing_pipeline
+    command: python -m src.train
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./models:/app/models
+
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: housing_api
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     volumes:
+      - ./app:/app/app
+      - ./src:/app/src
+      - ./scripts:/app/scripts
       - ./models:/app/models
       - ./data:/app/data
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: housing_streamlit
+    command: streamlit run app/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    volumes:
+      - ./app:/app/app
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+      - ./data:/app/data
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+      api:
+        condition: service_started

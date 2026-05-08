@@ -1,20 +1,19 @@
-install:
-	uv sync
+.PHONY: run run-api run-streamlit test run-docker-compose stop-docker-compose logs
 
-train:
-	uv run python -m src.train
+run-api:
+	uvicorn app.api:app --reload --host 0.0.0.0 --port 8000
 
-api:
-	uv run uvicorn app.main:app --reload
+run-streamlit:
+	streamlit run app/streamlit_app.py
 
 test:
-	uv run pytest
+	pytest
 
-lint:
-	uv run ruff check .
+run-docker-compose:
+	docker compose up --build
 
-docker-build:
-	docker build -t housing-api .
+stop-docker-compose:
+	docker compose down
 
-docker-run:
-	docker run -p 8000:8000 housing-api
+logs:
+	docker compose logs -f
