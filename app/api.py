@@ -1,13 +1,18 @@
-import joblib
+from datetime import datetime
+from pathlib import Path
+import json
+
 import pandas as pd
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from src.monitoring import log_prediction
+import joblib
 
 
-MODEL_PATH = "models/housing_model.joblib"
+MODEL_PATH = Path("models/housing_model.joblib")
+PREDICTIONS_LOG_PATH = Path("logs/predictions.jsonl")
+
 
 app = FastAPI(title="Housing Price Prediction API")
 
@@ -30,31 +35,47 @@ class HousingInput(BaseModel):
     LSTAT: float | None = None
 
 
+def log_prediction(input_data: dict, prediction: float) -> None:
+    PREDICTIONS_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    log_entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "input": input_data,
+        "prediction": prediction,
+    }
+
+    with open(PREDICTIONS_LOG_PATH, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
+
+
 @app.get("/")
 def root():
-    return {"message": "Housing ML API is running"}
+    return {"message": "Housing Price Prediction API"}
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
-
-
-@app.get("/model/version")
-def model_version():
-    return {"model_file": MODEL_PATH}
+    return {
+        "status": "ok",
+        "model_exists": MODEL_PATH.exists(),
+    }
 
 
 @app.post("/predict")
 def predict(input_data: HousingInput):
-    input_dict = input_data.model_dump()
+    try:
+        input_dict = input_data.model_dump()
 
-    df = pd.DataFrame([input_dict])
-    prediction = float(model.predict(df)[0])
+        df = pd.DataFrame([input_dict])
 
-    log_prediction(input_dict, prediction)
+        prediction = float(model.predict(df)[0])
 
-    return {
-        "predicted_price": round(prediction, 2),
-        "unit": "thousands_usd",
-    }
+        log_prediction(input_dict, prediction)
+
+        return {
+            "predicted_price": round(prediction, 2),
+            "unit": "thousands_usd",
+        }
+
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))

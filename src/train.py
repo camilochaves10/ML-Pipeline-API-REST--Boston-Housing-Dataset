@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import joblib
 import pandas as pd
@@ -6,7 +7,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
-from src.pipeline import build_pipeline
+from src.pipeline import FEATURE_COLUMNS, build_pipeline
 
 
 FULL_DATA_PATH = Path("data/raw/HousingData.csv")
@@ -31,23 +32,7 @@ def load_training_data() -> pd.DataFrame:
 
 
 def validate_training_data(df: pd.DataFrame) -> None:
-    required_columns = {
-        "CRIM",
-        "ZN",
-        "INDUS",
-        "CHAS",
-        "NOX",
-        "RM",
-        "AGE",
-        "DIS",
-        "RAD",
-        "TAX",
-        "PTRATIO",
-        "B",
-        "LSTAT",
-        "MEDV",
-    }
-
+    required_columns = set(FEATURE_COLUMNS + ["MEDV"])
     missing_columns = required_columns - set(df.columns)
 
     if missing_columns:
@@ -64,7 +49,7 @@ def train() -> None:
 
     target = "MEDV"
 
-    X = df.drop(columns=[target])
+    X = df[FEATURE_COLUMNS]
     y = df[target]
 
     if len(df) < 10:
@@ -98,7 +83,9 @@ def train() -> None:
     metrics = pd.DataFrame(
         [
             {
-                "dataset_used": str(FULL_DATA_PATH if FULL_DATA_PATH.exists() else SAMPLE_DATA_PATH),
+                "dataset_used": str(
+                    FULL_DATA_PATH if FULL_DATA_PATH.exists() else SAMPLE_DATA_PATH
+                ),
                 "rows": len(df),
                 "mae": mae,
                 "rmse": rmse,
@@ -106,8 +93,8 @@ def train() -> None:
             }
         ]
     )
-
-    metrics.to_json(METRICS_PATH, orient="records", indent=4)
+    with open(METRICS_PATH, "w") as f:
+        json.dump(metrics.to_dict(orient="records"), f, indent=4)
 
     print(f"Model saved to {MODEL_PATH}")
     print(f"Metrics saved to {METRICS_PATH}")

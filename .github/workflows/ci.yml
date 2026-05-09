@@ -21,6 +21,9 @@ jobs:
       - name: Build Docker Compose services
         run: docker compose build
 
+      - name: Run linting
+        run: docker compose run --rm api ruff check .
+
       - name: Run pipeline
         run: docker compose run --rm pipeline
 
@@ -29,6 +32,9 @@ jobs:
 
       - name: Start API and Streamlit
         run: docker compose up -d api streamlit
+
+      - name: Show containers
+        run: docker compose ps
 
       - name: Show logs if failed
         if: failure()

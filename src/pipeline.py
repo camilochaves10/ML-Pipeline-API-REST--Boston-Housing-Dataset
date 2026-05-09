@@ -7,21 +7,29 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 
 
-def build_pipeline() -> Pipeline:
-    log_transform_cols = ["CRIM", "ZN"]
-    median_cols = ["INDUS", "AGE", "LSTAT"]
-    mode_cols = ["CHAS"]
+LOG_TRANSFORM_COLS = ["CRIM", "ZN"]
+MEDIAN_COLS = ["INDUS", "AGE", "LSTAT"]
+MODE_COLS = ["CHAS"]
 
-    other_numeric_cols = [
-        "NOX",
-        "RM",
-        "DIS",
-        "RAD",
-        "TAX",
-        "PTRATIO",
-        "B",
-    ]
+OTHER_NUMERIC_COLS = [
+    "NOX",
+    "RM",
+    "DIS",
+    "RAD",
+    "TAX",
+    "PTRATIO",
+    "B",
+]
 
+FEATURE_COLUMNS = (
+    LOG_TRANSFORM_COLS
+    + MEDIAN_COLS
+    + MODE_COLS
+    + OTHER_NUMERIC_COLS
+)
+
+
+def build_preprocessor() -> ColumnTransformer:
     log_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -45,20 +53,23 @@ def build_pipeline() -> Pipeline:
 
     other_numeric_transformer = Pipeline(
         steps=[
+            ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
         ]
     )
 
-    preprocessor = ColumnTransformer(
+    return ColumnTransformer(
         transformers=[
-            ("log", log_transformer, log_transform_cols),
-            ("median", median_transformer, median_cols),
-            ("mode", mode_transformer, mode_cols),
-            ("other_num", other_numeric_transformer, other_numeric_cols),
+            ("log", log_transformer, LOG_TRANSFORM_COLS),
+            ("median", median_transformer, MEDIAN_COLS),
+            ("mode", mode_transformer, MODE_COLS),
+            ("other_num", other_numeric_transformer, OTHER_NUMERIC_COLS),
         ],
         remainder="drop",
     )
 
+
+def build_pipeline() -> Pipeline:
     model = RandomForestRegressor(
         n_estimators=100,
         random_state=42,
@@ -66,7 +77,7 @@ def build_pipeline() -> Pipeline:
 
     return Pipeline(
         steps=[
-            ("preprocessor", preprocessor),
-            ("model", model),
+            ("preprocessor", build_preprocessor()),
+            ("regressor", model),
         ]
     )

@@ -12,3 +12,8 @@ matplotlib
 plotly
 pytest
 httpx
+shap
+matplotlib
+ruff
+mlflow
+
