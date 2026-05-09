@@ -1,9 +1,18 @@
-[
-    {
-        "dataset_used": "data/raw/HousingData.csv",
-        "rows": 506,
+{
+    "dataset_used": "data/raw/HousingData.csv",
+    "rows": 506,
+    "selected_model": {
+        "model": "random_forest",
         "mae": 2.07385294117647,
         "rmse": 2.9029836831621845,
         "r2": 0.8850827831112706
-    }
-]
+    },
+    "baseline_results": [
+        {
+            "model": "random_forest",
+            "mae": 2.07385294117647,
+            "rmse": 2.9029836831621845,
+            "r2": 0.8850827831112706
+        }
+    ]
+}
