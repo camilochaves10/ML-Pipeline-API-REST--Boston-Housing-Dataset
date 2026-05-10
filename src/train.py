@@ -9,6 +9,10 @@ from sklearn.model_selection import train_test_split
 
 from src.pipeline import FEATURE_COLUMNS, build_pipeline
 
+import os
+import mlflow
+import mlflow.sklearn
+
 
 FULL_DATA_PATH = Path("data/raw/HousingData.csv")
 SAMPLE_DATA_PATH = Path("data/raw/sample.csv")
@@ -16,6 +20,23 @@ SAMPLE_DATA_PATH = Path("data/raw/sample.csv")
 MODEL_PATH = Path("models/housing_model.joblib")
 METRICS_PATH = Path("models/metrics.json")
 FEATURE_IMPORTANCE_PATH = Path("models/feature_importance.json")
+
+def setup_mlflow() -> None:
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:/app/mlruns")
+    mlflow.set_tracking_uri(tracking_uri)
+
+    experiment_name = "housing-price-regression"
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+
+    if experiment is None:
+        experiment_id = mlflow.create_experiment(experiment_name)
+    else:
+        experiment_id = experiment.experiment_id
+
+    mlflow.set_experiment(experiment_name)
+
+    print(f"MLflow tracking URI: {tracking_uri}")
+    print(f"MLflow experiment ID: {experiment_id}")
 
 def save_feature_importance(pipeline) -> None:
     model = pipeline.named_steps["regressor"]
@@ -61,6 +82,7 @@ def validate_training_data(df: pd.DataFrame) -> None:
 
 
 def train() -> None:
+    setup_mlflow()
     df = load_training_data()
     validate_training_data(df)
 
@@ -78,23 +100,34 @@ def train() -> None:
             test_size=0.2,
             random_state=42,
         )
+    with mlflow.start_run(run_name="random_forest_baseline"):
+        pipeline = build_pipeline()
+        pipeline.fit(X_train, y_train)
 
-    pipeline = build_pipeline()
-    pipeline.fit(X_train, y_train)
+        preds = pipeline.predict(X_test)
 
-    preds = pipeline.predict(X_test)
+        mae = float(mean_absolute_error(y_test, preds))
+        rmse = float(mean_squared_error(y_test, preds) ** 0.5)
+        r2 = float(r2_score(y_test, preds))
 
-    mae = float(mean_absolute_error(y_test, preds))
-    rmse = float(mean_squared_error(y_test, preds) ** 0.5)
-    r2 = float(r2_score(y_test, preds))
+        print(f"MAE:  {mae:.4f}")
+        print(f"RMSE: {rmse:.4f}")
+        print(f"R2:   {r2:.4f}")
+        mlflow.log_param("model", "random_forest")
+        mlflow.log_param("dataset_used", str(FULL_DATA_PATH if FULL_DATA_PATH.exists() else SAMPLE_DATA_PATH))
+        mlflow.log_param("rows", int(len(df)))
 
-    print(f"MAE:  {mae:.4f}")
-    print(f"RMSE: {rmse:.4f}")
-    print(f"R2:   {r2:.4f}")
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("r2", r2)
 
-    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(pipeline, MODEL_PATH)
-    save_feature_importance(pipeline)
+       
+
+        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(pipeline, MODEL_PATH)
+        save_feature_importance(pipeline)
+        mlflow.log_artifact(str(MODEL_PATH))
+        mlflow.log_artifact(str(METRICS_PATH))
 
     metrics = {
         "dataset_used": str(
