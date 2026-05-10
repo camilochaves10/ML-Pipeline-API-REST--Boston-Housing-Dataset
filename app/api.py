@@ -12,6 +12,8 @@ import joblib
 
 MODEL_PATH = Path("models/housing_model.joblib")
 PREDICTIONS_LOG_PATH = Path("logs/predictions.jsonl")
+METRICS_PATH = Path("models/metrics.json")
+FEATURE_IMPORTANCE_PATH = Path("models/feature_importance.json")
 
 
 app = FastAPI(title="Housing Price Prediction API")
@@ -79,3 +81,21 @@ def predict(input_data: HousingInput):
 
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+@app.get("/model-info")
+def model_info():
+    metrics = None
+
+    if METRICS_PATH.exists():
+        with open(METRICS_PATH, "r") as f:
+            metrics = json.load(f)
+
+    return {
+        "model_loaded": model is not None,
+        "model_path": str(MODEL_PATH),
+        "model_exists": MODEL_PATH.exists(),
+        "metrics_path": str(METRICS_PATH),
+        "metrics_exists": METRICS_PATH.exists(),
+        "feature_importance_exists": FEATURE_IMPORTANCE_PATH.exists(),
+        "metrics": metrics,
+    }

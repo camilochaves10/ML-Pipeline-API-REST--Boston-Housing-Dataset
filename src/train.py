@@ -11,6 +11,7 @@ from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.model_selection import RandomizedSearchCV
 
 from src.pipeline import FEATURE_COLUMNS, build_preprocessor
 
@@ -28,6 +29,43 @@ def setup_mlflow() -> None:
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment("housing-price-regression")
     print(f"MLflow tracking URI: {tracking_uri}")
+
+def tune_model(model_name: str, pipeline: Pipeline, X_train, y_train, sample_mode: bool):
+    if sample_mode:
+        print(f"Sample mode detected. Skipping tuning for {model_name}.")
+        return pipeline, {}
+
+    search_spaces = {
+        "random_forest": {
+            "regressor__n_estimators": [100, 200, 300],
+            "regressor__max_depth": [None, 5, 10, 20],
+            "regressor__min_samples_split": [2, 5, 10],
+            "regressor__min_samples_leaf": [1, 2, 4],
+        },
+        "gradient_boosting": {
+            "regressor__n_estimators": [100, 200, 300],
+            "regressor__learning_rate": [0.01, 0.05, 0.1],
+            "regressor__max_depth": [2, 3, 5],
+        },
+    }
+
+    if model_name not in search_spaces:
+        print(f"No tuning configured for {model_name}.")
+        return pipeline, {}
+
+    search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=search_spaces[model_name],
+        n_iter=10,
+        cv=5,
+        scoring="neg_mean_absolute_error",
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    search.fit(X_train, y_train)
+
+    return search.best_estimator_, search.best_params_
 
 
 def load_training_data() -> pd.DataFrame:
@@ -171,6 +209,31 @@ def train() -> None:
             best_pipeline = pipeline
 
     results = sorted(results, key=lambda row: row["mae"])
+
+    best_model_name = best_result["model"]
+
+    print(f"Tuning best model: {best_model_name}")
+
+    tuned_pipeline, best_params = tune_model(
+        best_model_name,
+        best_pipeline,
+        X_train,
+        y_train,
+        sample_mode=len(df) < 10,
+    )
+
+    tuned_metrics = evaluate_model(tuned_pipeline, X_test, y_test)
+
+    if tuned_metrics["mae"] <= best_result["mae"]:
+        print("Tuned model improved or matched baseline. Using tuned model.")
+        best_pipeline = tuned_pipeline
+        best_result = {
+            "model": f"{best_model_name}_tuned",
+            **tuned_metrics,
+            "best_params": best_params,
+        }
+    else:
+        print("Tuned model did not improve baseline. Keeping baseline model.")
 
     joblib.dump(best_pipeline, MODEL_PATH)
     save_feature_importance(best_pipeline)
