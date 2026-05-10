@@ -121,3 +121,16 @@ Ver logs:
 ```bash
 make logs
 ```
+
+## Posibles Mejoras Futuras
+
+- Integrar Apache Airflow para automatizar el reentrenamiento periódico del modelo.
+- Incorporar SHAP para explainability y análisis de predicciones.
+- Implementar hyperparameter tuning más avanzado.
+- Agregar monitoreo de drift de datos y performance del modelo.
+- Desplegar el sistema en AWS, GCP o Azure.
+- Utilizar una base de datos para almacenar predicciones y logs.
+- Implementar un Model Registry completo con MLflow.
+- Agregar autenticación y seguridad a la API.
+- Incorporar más modelos de Machine Learning y ensembles.
+- Añadir testing y validaciones de datos más robustas.
