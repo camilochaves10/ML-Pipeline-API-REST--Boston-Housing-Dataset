@@ -134,3 +134,5 @@ make logs
 - Agregar autenticación y seguridad a la API.
 - Incorporar más modelos de Machine Learning y ensembles.
 - Añadir testing y validaciones de datos más robustas.
+
+Uso de LLMs de OpenAI para corrección de código y creación del frontend en Streamlit.
