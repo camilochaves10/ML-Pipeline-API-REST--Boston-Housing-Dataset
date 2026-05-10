@@ -75,10 +75,6 @@ Ejecutar todo el pipeline:
 make run-docker-compose
 ```
 
----
-
-## Servicios
-
 ### Streamlit
 
 http://localhost:8501
@@ -125,10 +121,3 @@ Ver logs:
 ```bash
 make logs
 ```
-
----
-
-## Autor
-
-Camilo Chaves  
-MS in Data Science — University of San Francisco
