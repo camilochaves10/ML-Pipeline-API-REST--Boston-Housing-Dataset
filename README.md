@@ -60,7 +60,7 @@ Proyecto de Machine Learning y MLOps para predicción de precios de viviendas ut
 
 ---
 
-## Ejecutar el Proyecto
+## Para Ejecutar el Proyecto:
 
 Clonar el repositorio:
 
